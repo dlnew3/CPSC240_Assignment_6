@@ -1,0 +1,47 @@
+     1                                  ;Author: Floyd Holliday
+     2                                  ;Library program name: Get Processor Frequency
+     3                                  ;Purpose: Extract the CPU max speed from the processor
+     4                                  
+     5                                  ;Prototype:  double getfreq()
+     6                                  
+     7                                  ;Translation: nasm -f elf64 -o freq.o getfrequency.asm
+     8                                  
+     9                                  global getfreq
+    10                                  
+    11                                  extern atof
+    12                                  
+    13                                  segment .data
+    14                                  
+    15                                  segment .bss
+    16                                  
+    17                                  segment .text
+    18                                  getfreq:
+    19                                  
+    20                                  ;Back up all GPRs: to be inserted later
+    21                                  
+    22                                  
+    23                                  ;Extract data from processor in the form of two 4-byte strings
+    24 00000000 B804000080              mov rax, 0x0000000080000004
+    25 00000005 0FA2                    cpuid
+    26                                  ;Answer is in ebx:eax as big endian strings
+    27 00000007 4989DF                  mov       r15, rbx      ;Second part of string saved in r15
+    28 0000000A 4989C6                  mov       r14, rax      ;First part of string saved in r14
+    29                                  
+    30                                  
+    31                                  ;Catenate the two short strings into one 8-byte string in big endian
+    32 0000000D 4981E7FF000000          and r15, 0x00000000000000FF    ;Convert non-numeric chars to nulls
+    33 00000014 49C1E720                shl r15, 32
+    34 00000018 4D09F7                  or r15, r14                    ;Combined string is in r15
+    35                                  
+    36                                  
+    37                                  ;Convert string to quadword numeric double.
+    38 0000001B 4157                    push r15
+    39 0000001D B801000000              mov rax,1
+    40 00000022 4889E7                  mov rdi,rsp
+    41 00000025 E8(00000000)            call atof          ;The number is now in xmm0
+    42 0000002A 58                      pop rax
+    43                                  
+    44                                  
+    45                                  ;Restore the values of all GPRs: to be inserted later
+    46                                  
+    47 0000002B C3                      ret

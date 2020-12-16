@@ -1,0 +1,322 @@
+     1                                  ;==============================================================================================================
+     2                                  ;Program name: "Harmonic Sum". This program is meant to calculate the 
+     3                                  ;   Harmonic Sum of an inputted integer. Copyright (C) 2020 Dennis Newman
+     4                                  ;This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License  *
+     5                                  ;version 3 as published by the Free Software Foundation.                                                                    *
+     6                                  ;This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied         *
+     7                                  ;Warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.     *
+     8                                  ;A copy of the GNU General Public License v3 is available here:  <https://www.gnu.org/licenses/>.
+     9                                  ;==============================================================================================================
+    10                                  
+    11                                  ;==============================================================================================================
+    12                                  ;Author Information
+    13                                  ;       Author Name: Dennis Newman
+    14                                  ;       Author email: dlnew3@csu.fullerton.edu
+    15                                  ;;
+    16                                  ;Program Information
+    17                                  ;   Program Name: Harmonic Sum
+    18                                  ;   Program Languages: One module in C++, two modules in x86
+    19                                  ;   Date Program began: Dec. 8, 2020
+    20                                  ;   Date Program completed:
+    21                                  ;   Files in this program: main.cpp, manager.asm, read_clock.asm, r.sh
+    22                                  ;   Status: In Progress
+    23                                  ;;
+    24                                  ;References for this program
+    25                                  ;   Jorgensen, X86-64 Assembly Language Programming with Ubuntu, Version 1.1.40.
+    26                                  ;;
+    27                                  ;This File
+    28                                  ;   File Name: manager.asm
+    29                                  ;   Language: x86-64 with Intel Syntax
+    30                                  ;   Assemble: nasm -f elf64 -l manager.lis -o manager.o manager.asm
+    31                                  
+    32                                  ;======= Beginning of Code Area ===================================================================================================
+    33                                  
+    34                                  extern printf               ;External C++ function for writing to standard output devices
+    35                                  extern scanf                ;External C++ function for reading from standard input devices
+    36                                  extern getfreq          ;User-Defined function
+    37                                  ;extern atof
+    38                                  
+    39                                  
+    40                                  ;==================================================================================================================================
+    41                                  segment .data               ;Initialized Data goes here
+    42                                  
+    43 00000000 0000000000000000        start_tics dq 0
+    44 00000008 0000000000000000        close_tics dq 0
+    45 00000010 0000000000000000        input dq 0
+    46 00000018 0000000000000000        output dq 0
+    47                                  
+    48 00000020 256C6400                numberFormat db "%ld", 0
+    49 00000024 257300                  stringFormat db "%s", 0
+    50                                  
+    51 00000027 506C6561736520656E-     input_msg db "Please enter the number of terms to be included in the sum: ", 10, 0
+    51 00000030 74657220746865206E-
+    51 00000039 756D626572206F6620-
+    51 00000042 7465726D7320746F20-
+    51 0000004B 626520696E636C7564-
+    51 00000054 656420696E20746865-
+    51 0000005D 2073756D3A200A00   
+    52 00000065 4572726F723A20496E-     error_msg db "Error: Inputted value is not a positive integer, closing program...", 10, 0
+    52 0000006E 707574746564207661-
+    52 00000077 6C7565206973206E6F-
+    52 00000080 74206120706F736974-
+    52 00000089 69766520696E746567-
+    52 00000092 65722C20636C6F7369-
+    52 0000009B 6E672070726F677261-
+    52 000000A4 6D2E2E2E0A00       
+    53 000000AA 0A54686520636C6F63-     initial_tics db 10, "The clock is now %ld tics and the computation will begin.", 10, 0
+    53 000000B3 6B206973206E6F7720-
+    53 000000BC 256C64207469637320-
+    53 000000C5 616E64207468652063-
+    53 000000CE 6F6D7075746174696F-
+    53 000000D7 6E2077696C6C206265-
+    53 000000E0 67696E2E0A00       
+    54 000000E6 0A5465726D7320636F-     column_head db 10, "Terms completed", 9, "Harmonic sum", 10 , 0
+    54 000000EF 6D706C657465640948-
+    54 000000F8 61726D6F6E69632073-
+    54 00000101 756D0A00           
+    55 00000105 09256C640909256C66-     row_hsum db 9, "%ld", 9, 9, "%lf", 10, 0
+    55 0000010E 0A00               
+    56 00000110 0A54686520636C6F63-     final_tics db 10, "The clock is now %ld tics, which equals %f seconds.", 10, 0
+    56 00000119 6B206973206E6F7720-
+    56 00000122 256C6420746963732C-
+    56 0000012B 207768696368206571-
+    56 00000134 75616C732025662073-
+    56 0000013D 65636F6E64732E0A00 
+    57 00000146 546865206861726D6F-     exit_msg db "The harmonic sum will be returned to the driver.", 10, 0
+    57 0000014F 6E69632073756D2077-
+    57 00000158 696C6C206265207265-
+    57 00000161 7475726E656420746F-
+    57 0000016A 207468652064726976-
+    57 00000173 65722E0A00         
+    58                                  
+    59                                  ;============Debug Statements==============
+    60 00000178 436C6F636B20537065-     dbg_getfreq db "Clock Speed is %f GHz", 10, 0
+    60 00000181 656420697320256620-
+    60 0000018A 47487A0A00         
+    61 0000018F 43757272656E742074-     dbg_tics db "Current tics = %ld tics", 10, 0
+    61 00000198 696373203D20256C64-
+    61 000001A1 20746963730A00     
+    62 000001A8 456C61707365642073-     dbg_seconds db "Elapsed seconds = %lf seconds", 10, 0
+    62 000001B1 65636F6E6473203D20-
+    62 000001BA 256C66207365636F6E-
+    62 000001C3 64730A00           
+    63 000001C7 526563656976656420-     dbg_input db "Received input = %ld.", 10, 0
+    63 000001D0 696E707574203D2025-
+    63 000001D9 6C642E0A00         
+    64                                  ;============Debug Statements==============
+    65                                  
+    66                                  global hsum     	        ;Makes manager callable by functions outside of file.
+    67                                  
+    68                                  segment .bss
+    69 00000000 0000803F                fHarmonNumerator dd 1.0
+    69          ******************       warning: attempt to initialize memory in BSS section `.bss': ignored [-w+other]
+    70                                  
+    71                                  
+    72                                  segment .text
+    73                                  hsum:
+    74                                  
+    75                                  ;==================================== Back-up GPRs ====================================
+    76 00000000 55                        push  rbp         ;Save a copy of the stack base pointer
+    77 00000001 4889E5                    mov   rbp, rsp    ;We do this in order to be 100% compatible with C and C++.
+    78 00000004 53                        push  rbx         ;Back up rbx
+    79 00000005 51                        push  rcx         ;Back up rcx
+    80 00000006 52                        push  rdx         ;Back up rdx
+    81 00000007 56                        push  rsi         ;Back up rsi
+    82 00000008 57                        push  rdi         ;Back up rdi
+    83 00000009 4150                      push  r8          ;Back up r8
+    84 0000000B 4151                      push  r9          ;Back up r9
+    85 0000000D 4152                      push  r10         ;Back up r10
+    86 0000000F 4153                      push  r11         ;Back up r11
+    87 00000011 4154                      push  r12         ;Back up r12
+    88 00000013 4155                      push  r13         ;Back up r13
+    89 00000015 4156                      push  r14         ;Back up r14
+    90 00000017 4157                      push  r15         ;Back up r15
+    91 00000019 9C                        pushf             ;Back up rflags
+    92                                  
+    93                                  ;======================================================================================
+    94                                  
+    95                                  ;===================================Debug Section================================================
+    96                                  ;; DEBUG getfreq
+    97 0000001A 4831C0                  xor rax, rax
+    98 0000001D E8(00000000)            call getfreq
+    99 00000022 B801000000              mov rax, 1
+   100 00000027 48BF-                   mov rdi, dbg_getfreq
+   100 00000029 [7801000000000000] 
+   101 00000031 E8(00000000)            call printf
+   102                                  ;; DEBUG getfreq _END
+   103                                  
+   104                                  ;; DEBUG tics (START)
+   105 00000036 4831C0                  xor rax, rax
+   106 00000039 0F31                    rdtsc
+   107 0000003B 890425[00000000]        mov [start_tics], eax		; Lower half of RDTSC will be in eax
+   108 00000042 891425[04000000]        mov [start_tics+4], edx		; Upper half of RDTSC will be in edx
+   109 00000049 48BF-                   mov rdi, dbg_tics			; First parameter for printf
+   109 0000004B [8F01000000000000] 
+   110 00000053 488B3425[00000000]      mov rsi, [start_tics]		; Second parameter for printf
+   111 0000005B E8(00000000)            call printf
+   112                                  ;; DEBUG tics (START) _END
+   113                                  
+   114                                  ;; DEBUG tics (CLOSE)
+   115 00000060 4831C0                  xor rax, rax
+   116 00000063 0F31                    rdtsc
+   117 00000065 890425[08000000]        mov [close_tics], eax		; Lower half of RDTSC will be in eax
+   118 0000006C 891425[0C000000]        mov [close_tics+4], edx		; Upper half of RDTSC will be in edx
+   119 00000073 48BF-                   mov rdi, dbg_tics			; First parameter for printf
+   119 00000075 [8F01000000000000] 
+   120 0000007D 488B3425[08000000]      mov rsi, [close_tics]		; Second parameter for printf
+   121 00000085 E8(00000000)            call printf
+   122                                  ; DEBUG tics (CLOSE) _END
+   123                                  
+   124                                  ;; DEBUG SECONDS
+   125                                  ; getfreq -> xmm15
+   126 0000008A 4831C0                  xor rax, rax
+   127 0000008D E8(00000000)            call getfreq
+   128 00000092 4C8B3C25[08000000]      mov r15, [close_tics]
+   129 0000009A 4C2B3C25[00000000]      sub r15, [start_tics]
+   130 000000A2 F24D0F2AEF              cvtsi2sd xmm13, r15
+   131 000000A7 B800000000              mov rax, 0
+   132 000000AC F2440F10F8              movsd xmm15, xmm0
+   133                                  ; Math part
+   134 000000B1 49BD0000000065CDCD-     mov r13, 0x41cdcd6500000000	; 1 billion
+   134 000000BA 41                 
+   135 000000BB 664D0F6EE5              movq xmm12, r13				; xmm12 = 1bil
+   136 000000C0 F2450F10F7              movsd xmm14, xmm15			; xmm14 = Clock Speed
+   137 000000C5 F2450F59F4              mulsd xmm14, xmm12			; xmm14 = Clock Speed * 1bil
+   138 000000CA F2450F5EEE              divsd xmm13, xmm14			; xmm13 = Elapsed time / (GHz * 1bil)
+   139                                  ; printf part
+   140 000000CF B801000000              mov rax, 1
+   141 000000D4 48BF-                   mov rdi, dbg_seconds
+   141 000000D6 [A801000000000000] 
+   142 000000DE 4C89FE                  mov rsi, r15
+   143 000000E1 F2410F10C5              movsd xmm0, xmm13
+   144 000000E6 E8(00000000)            call printf
+   145                                  ;; DEBUG SECONDS _END
+   146                                  ;===================================Debug Section================================================
+   147                                  
+   148                                  
+   149                                  ;;	Input Message
+   150 000000EB B800000000              mov rax, 0
+   151 000000F0 48BF-                   mov rdi, input_msg
+   151 000000F2 [2700000000000000] 
+   152 000000FA E8(00000000)            call printf
+   153                                  ;;	Input Message _END
+   154                                  
+   155                                  ;;	Receive input
+   156 000000FF 48BF-                   mov qword rdi, numberFormat
+   156 00000101 [2000000000000000] 
+   157 00000109 6AFF                    push qword -1                     	;Reserve space for input
+   158 0000010B 6AFF                    push qword -1
+   159 0000010D 4889E6                  mov qword rsi, rsp               	;Now rsi points to that dummy value on the stack
+   160 00000110 B800000000              mov qword rax, 0                 	;No vector registers
+   161 00000115 E8(00000000)            call scanf                       	;Call the external function; the new value is placed into the location that rsi points to
+   162 0000011A 415F                    pop qword r15                          	;First inputted integer is saved in r15
+   163 0000011C 58                      pop rax
+   164 0000011D 4C893C25[10000000]      mov [input], r15								
+   165                                  ;; Receive input _END
+   166                                  
+   167                                  
+   168                                  ;===================================Debug Section================================================
+   169                                  ;; DEBUG INPUT
+   170 00000125 48BF-                   mov rdi, dbg_input
+   170 00000127 [C701000000000000] 
+   171 0000012F 488B3425[10000000]      mov rsi, [input]
+   172 00000137 B800000000              mov rax, 0
+   173 0000013C E8(00000000)            call printf
+   174                                  ;; DEBUG INPUT _END					
+   175                                  ;===================================Debug Section================================================
+   176                                  ;================================================================================================
+   177                                  ;================================================================================================
+   178                                  ;====================CODE STABLE UP TO THIS POINT. SEG FAULT DOWN BELOW==========================
+   179                                  
+   180                                  ;;SEG FAULT HAZARD ZONE
+   181 00000141 41BF00000000            mov r15, 0                                  ; Initialize the loop counter to 0
+   182 00000147 49BE-                   mov r14, input					     	    ; Initialize counter validation to inputted value
+   182 00000149 [1000000000000000] 
+   183 00000151 F2440F103C25-           movsd xmm15, [fHarmonNumerator]		  				; xmm15 = hsum numerator, always 1
+   183 00000157 [00000000]         
+   184                                  ;;SEG FAULT HAZARD ZONE
+   185                                  
+   186                                  ;;	Output Column Head
+   187 0000015B B800000000              mov qword rax, 0
+   188 00000160 48BF-                   mov rdi, stringFormat
+   188 00000162 [2400000000000000] 
+   189 0000016A 48BE-                   mov rsi, column_head
+   189 0000016C [E600000000000000] 
+   190 00000174 E8(00000000)            call printf
+   191                                  ;;	Output Column Head _END
+   192                                  
+   193                                  ;===================================Loop Start===================================================
+   194                                  hsum_loop:
+   195                                  
+   196                                  ;;	Loop Validation
+   197 00000179 B800000000              mov qword rax, 0                        ;No data from the SSE will be printed
+   198 0000017E 4D39F7                  cmp r15, r14							; Compares r15 to r14
+   199 00000181 7D5C                    jge non_positive_input					; If r15 >= r14, input received is <= 1
+   200                                  ;;	Loop Validation _END
+   201                                  
+   202                                  ;;	Loop Body
+   203 00000183 49FFC7                  inc r15									; increment r15. Loop Counter and denominator
+   204 00000186 F24D0F2AF7              cvtsi2sd xmm14, r15						; Converts r15(Denominator) to xmm14 register
+   205 0000018B F2450F5EFE              divsd xmm15, xmm14						; Division of Numerator(xmm15) by Denominator(xmm14)
+   206                                  ; Add harmonic increment to sum
+   207 00000190 F2440F102C25-           movsd xmm13, [output]
+   207 00000196 [18000000]         
+   208 0000019A F2450F58EF              addsd xmm13, xmm15						; Adds the latest division to output total
+   209 0000019F F2440F112C25-           movsd [output], xmm13
+   209 000001A5 [18000000]         
+   210                                  ; Validation for output of terms
+   211 000001A9 4C89F8                  mov rax, r15
+   212 000001AC 41B90C000000            mov r9, 12
+   213 000001B2 49F7F9                  idiv r9									; rdx = rax(loop counter) % 12
+   214 000001B5 4883FA00                cmp rdx, 0								
+   215 000001B9 7407                    je term_output							; if counter is a multiple of 12, output the term
+   216                                  ; Validation to continue Loop
+   217 000001BB 4D39F7                  cmp r15, r14							; if loop counter == input value...
+   218 000001BE 7433                    je loop_end								; ... jump to closing statements
+   219 000001C0 EBB7                    jmp hsum_loop							; else start hsum_loop all over again
+   220                                  ;;	Loop Body _END
+   221                                  
+   222                                  ;;	Term Output
+   223                                  term_output:							;loop if term needs to be outputted
+   224 000001C2 48BF-                   mov rdi, row_hsum
+   224 000001C4 [0501000000000000] 
+   225 000001CC 4C89FE                  mov rsi, r15
+   226 000001CF F20F100425-             movsd xmm0, [output]
+   226 000001D4 [18000000]         
+   227 000001D8 E8(00000000)            call printf
+   228 000001DD EB9A                    jmp hsum_loop							;jumps back to start of hsum_loop
+   229                                  ;;	Term Output _END
+   230                                  ;===================================Loop End===================================================
+   231                                  
+   232                                  non_positive_input:
+   233 000001DF 48BF-                   mov rdi, error_msg
+   233 000001E1 [6500000000000000] 
+   234 000001E9 B800000000              mov rax, 0
+   235 000001EE E8(00000000)            call printf
+   236                                  
+   237                                  loop_end:
+   238 000001F3 48BF-                   mov rdi, exit_msg
+   238 000001F5 [4601000000000000] 
+   239 000001FD 488B0425[18000000]      mov rax, [output]
+   240 00000205 E8(00000000)            call printf
+   241                                  
+   242                                  
+   243                                  ;==================================== Restore GPRs ====================================
+   244 0000020A 9D                        popf              ;Restore rflags
+   245 0000020B 415F                      pop   r15         ;Restore r15
+   246 0000020D 415E                      pop   r14         ;Restore r14
+   247 0000020F 415D                      pop   r13         ;Restore r13
+   248 00000211 415C                      pop   r12         ;Restore r12
+   249 00000213 415B                      pop   r11         ;Restore r11
+   250 00000215 415A                      pop   r10         ;Restore r10
+   251 00000217 4159                      pop   r9          ;Restore r9
+   252 00000219 4158                      pop   r8          ;Restore r8
+   253 0000021B 5F                        pop   rdi         ;Restore rdi
+   254 0000021C 5E                        pop   rsi         ;Restore rsi
+   255 0000021D 5A                        pop   rdx         ;Restore rdx
+   256 0000021E 59                        pop   rcx         ;Restore rcx
+   257 0000021F 5B                        pop   rbx         ;Restore rbx
+   258 00000220 5D                        pop   rbp         ;Return rbp to point to the base of the activation record of the caller.
+   259                                  ;======================================================================================
+   260                                  
+   261 00000221 C3                        ret
