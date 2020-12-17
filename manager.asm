@@ -44,6 +44,7 @@ start_tics dq 0
 close_tics dq 0
 input dq 0
 output dq 0
+fHarmonNumerator dq 1.0
 
 numberFormat db "%ld", 0
 stringFormat db "%s", 0
@@ -52,21 +53,22 @@ input_msg db "Please enter the number of terms to be included in the sum: ", 10,
 error_msg db "Error: Inputted value is not a positive integer, closing program...", 10, 0
 initial_tics db 10, "The clock is now %ld tics and the computation will begin.", 10, 0
 column_head db 10, "Terms completed", 9, "Harmonic sum", 10 , 0
-row_hsum db 9, "%ld", 9, 9, "%lf", 10, 0
-final_tics db 10, "The clock is now %ld tics, which equals %f seconds.", 10, 0
+row_hsum db 9, "%ld", 9, "%lf", 10, 0
+final_tics db 10, "The clock is now %ld tics, which equals %lf seconds.", 10, 0
 exit_msg db "The harmonic sum will be returned to the driver.", 10, 0
 
 ;============Debug Statements==============
 dbg_getfreq db "Clock Speed is %f GHz", 10, 0
 dbg_tics db "Current tics = %ld tics", 10, 0
-dbg_seconds db "Elapsed seconds = %lf seconds", 10, 0
+dbg_seconds db "Elapsed seconds = %.12lf seconds", 10, 0
 dbg_input db "Received input = %ld.", 10, 0
+dbg_block_conf db "Block completed", 10, 0 
+dbg_float db "%lf", 10, 0
 ;============Debug Statements==============
 
 global hsum     	        ;Makes manager callable by functions outside of file.
 
 segment .bss
-fHarmonNumerator dd 1.0
 
 
 segment .text
@@ -173,15 +175,10 @@ mov rax, 0
 call printf
 ;; DEBUG INPUT _END					
 ;===================================Debug Section================================================
-;================================================================================================
-;================================================================================================
-;====================CODE STABLE UP TO THIS POINT. SEG FAULT DOWN BELOW==========================
 
-;;SEG FAULT HAZARD ZONE
 mov r15, 0                                  ; Initialize the loop counter to 0
-mov r14, input					     	    ; Initialize counter validation to inputted value
-movsd xmm15, [fHarmonNumerator]		  				; xmm15 = hsum numerator, always 1
-;;SEG FAULT HAZARD ZONE
+mov r14, [input]					        ; Initialize counter validation to inputted value
+movsd xmm15, [fHarmonNumerator]		  		; xmm15 = hsum numerator, always 1
 
 ;;	Output Column Head
 mov qword rax, 0
@@ -190,26 +187,48 @@ mov rsi, column_head
 call printf
 ;;	Output Column Head _END
 
+;================================================================================================
+;================================================================================================
+;====================CODE STABLE UP TO THIS POINT. SEG FAULT DOWN BELOW==========================
+
+mov rdi, dbg_input			; 
+mov rsi, r14
+call printf
+
+movsd xmm0, [fHarmonNumerator]
+mov rax, 1
+mov rdi, dbg_float
+call printf
+
 ;===================================Loop Start===================================================
 hsum_loop:
 
 ;;	Loop Validation
-mov qword rax, 0                        ;No data from the SSE will be printed
+xor rax, rax                       ;No data from the SSE will be printed
 cmp r15, r14							; Compares r15 to r14
-jge non_positive_input					; If r15 >= r14, input received is <= 1
+jg non_positive_input					; If r15 >= r14, input received is <= 1
 ;;	Loop Validation _END
+
+
 
 ;;	Loop Body
 inc r15									; increment r15. Loop Counter and denominator
 cvtsi2sd xmm14, r15						; Converts r15(Denominator) to xmm14 register
+movsd xmm15, [fHarmonNumerator]
 divsd xmm15, xmm14						; Division of Numerator(xmm15) by Denominator(xmm14)
+
+
+
 ; Add harmonic increment to sum
 movsd xmm13, [output]
 addsd xmm13, xmm15						; Adds the latest division to output total
 movsd [output], xmm13
+
+
 ; Validation for output of terms
 mov rax, r15
 mov r9, 12
+cqo
 idiv r9									; rdx = rax(loop counter) % 12
 cmp rdx, 0								
 je term_output							; if counter is a multiple of 12, output the term
@@ -221,6 +240,7 @@ jmp hsum_loop							; else start hsum_loop all over again
 
 ;;	Term Output
 term_output:							;loop if term needs to be outputted
+mov rax, 1
 mov rdi, row_hsum
 mov rsi, r15
 movsd xmm0, [output]
@@ -234,7 +254,14 @@ mov rdi, error_msg
 mov rax, 0
 call printf
 
+
 loop_end:
+mov rdi, final_tics
+mov rax, 1
+mov rsi, r15
+movsd xmm0, [output]
+call printf
+
 mov rdi, exit_msg
 mov rax, [output]
 call printf
