@@ -27,7 +27,7 @@ This File
    File Name: main.cpp
    Language: C++
    Compile this file: g++ -c -m64 -Wall -o main.o main.cpp -fno-pie -no-pie -std=c++17
-   Link this program: g++ -m64 -o hsum.out main.o manager.o read_clock.o -fno-pie -no-pie -std=c++17
+   Link this program: g++ -m64 -o a.out main.o manager.o getfreq.o -fno-pie -no-pie -std=c++17
 **********************************************************************************************************************************/
 //*******************************************************Beginning of Code*********************************************************
 

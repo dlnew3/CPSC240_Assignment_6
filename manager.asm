@@ -33,8 +33,7 @@
 
 extern printf               ;External C++ function for writing to standard output devices
 extern scanf                ;External C++ function for reading from standard input devices
-extern getfreq          ;User-Defined function
-;extern atof
+extern getfreq              ;User-Defined function
 
 
 ;==================================================================================================================================
@@ -58,14 +57,7 @@ final_tics db 10, "The clock is now %ld tics.", 10, 0
 time db "The elapsed time was %ld tics, which equals %lf seconds", 10, 0
 exit_msg db "The harmonic sum will be returned to the driver.", 10, 0
 
-;============Debug Statements==============
-dbg_getfreq db "Clock Speed is %f GHz", 10, 0
-dbg_tics db "Current tics = %ld tics", 10, 0
-dbg_seconds db "Elapsed seconds = %lf seconds", 10, 0
-dbg_input db "Received input = %ld.", 10, 0
-dbg_block_conf db "Block completed", 10, 0 
-dbg_float db "%lf", 10, 0
-;============Debug Statements==============
+
 
 global hsum     	        ;Makes manager callable by functions outside of file.
 
@@ -95,41 +87,6 @@ hsum:
 
 ;======================================================================================
 
-;===================================Debug Section================================================
-;; DEBUG getfreq
-xor rax, rax
-call getfreq
-mov rax, 1
-mov rdi, dbg_getfreq
-;call printf
-;; DEBUG getfreq _END
-
-
-
-
-;; DEBUG SECONDS
-; getfreq -> xmm15
-xor rax, rax
-call getfreq
-mov r15, [close_tics]
-sub r15, [start_tics]
-cvtsi2sd xmm13, r15
-mov rax, 0
-movsd xmm15, xmm0
-; Math part
-mov r13, 0x41cdcd6500000000	; 1 billion
-movq xmm12, r13				; xmm12 = 1bil
-movsd xmm14, xmm15			; xmm14 = Clock Speed
-mulsd xmm14, xmm12			; xmm14 = Clock Speed * 1bil
-divsd xmm13, xmm14			; xmm13 = Elapsed time / (GHz * 1bil)
-; printf part
-mov rax, 1
-mov rdi, dbg_seconds
-mov rsi, r15
-movsd xmm0, xmm13
-;call printf
-;; DEBUG SECONDS _END
-;===================================Debug Section================================================
 
 
 ;;	Input Message
@@ -150,40 +107,14 @@ pop rax
 mov [input], r15								
 ;; Receive input _END
 
-
-;===================================Debug Section================================================
-;; DEBUG INPUT
-mov rdi, dbg_input
-mov rsi, [input]
-mov rax, 0
-;call printf
-;; DEBUG INPUT _END					
-;===================================Debug Section================================================
+;======================================Loop Initialization=====================================
 
 mov r15, 0                                  ; Initialize the loop counter to 0
 mov r14, [input]					        ; Initialize counter validation to inputted value
 movsd xmm15, [fHarmonNumerator]		  		; xmm15 = hsum numerator, always 1
 
 
-
-;================================================================================================
-;================================================================================================
-;====================CODE STABLE UP TO THIS POINT. SEG FAULT DOWN BELOW==========================
-;========================EDIT(12-16-2020). SEG FAULT RESOLVED====================================
-
-mov rdi, dbg_input			; 
-mov rsi, r14
-;call printf
-
-;===================================Debug Section================================================
-; DEBUG HSUM NUMERATOR
-movsd xmm0, [fHarmonNumerator]
-mov rax, 1
-mov rdi, dbg_float
-;call printf
-; DEBUG HSUM NUMERATOR _END
-
-;; DEBUG tics (START)
+;	Initial Tics
 xor rax, rax
 rdtsc
 mov [start_tics], eax		; Lower half of RDTSC will be in eax
@@ -191,7 +122,7 @@ mov [start_tics+4], edx		; Upper half of RDTSC will be in edx
 mov rdi, initial_tics			; First parameter for printf
 mov rsi, [start_tics]		; Second parameter for printf
 call printf
-;; DEBUG tics (START) _END
+
 
 ;;	Output Column Head
 mov qword rax, 0
@@ -210,20 +141,16 @@ jle non_positive_input					; If r15 >= r14, input received is <= 1
 ;;	Loop Validation _END
 
 
-
 ;;	Loop Body
 inc r15									; increment r15. Loop Counter and denominator
 cvtsi2sd xmm14, r15						; Converts r15(Denominator) to xmm14 register
 movsd xmm15, [fHarmonNumerator]
 divsd xmm15, xmm14						; Division of Numerator(xmm15) by Denominator(xmm14)
 
-
-
 ; Add harmonic increment to sum
 movsd xmm13, [output]
 addsd xmm13, xmm15						; Adds the latest division to output total
 movsd [output], xmm13
-
 
 ; Validation for output of terms
 mov rax, r15
@@ -238,6 +165,8 @@ je loop_end								; ... jump to closing statements
 jmp hsum_loop							; else start hsum_loop all over again
 ;;	Loop Body _END
 
+
+
 ;;	Term Output
 term_output:							;loop if term needs to be outputted
 mov rax, 1
@@ -249,36 +178,29 @@ call printf
 cmp r15, r14							; if loop counter == input value...
 je loop_end								; ... jump to closing statements
 jmp hsum_loop							; else start hsum_loop all over again
-;;	Term Output _END
-;===================================Loop End===================================================
+;;	Term Output _END 
 
+;===================================Loop End===================================================
+;	Jump for invalid input
 non_positive_input:
 mov rdi, error_msg
 mov rax, 0
 call printf
 
-
 loop_end:
 
-;; DEBUG tics (CLOSE)
 xor rax, rax
 rdtsc
 mov [close_tics], eax		; Lower half of RDTSC will be in eax
 mov [close_tics+4], edx		; Upper half of RDTSC will be in edx
-mov rdi, dbg_tics			; First parameter for printf
-mov rsi, [close_tics]		; Second parameter for printf
-;call printf
-; DEBUG tics (CLOSE) _END
+
 
 mov rdi, final_tics
 mov rax, 0
 mov rsi, [close_tics]
-;movsd xmm0, [output]
 call printf
 
 
-; DEBUG SECONDS
-; getfreq -> xmm15
 xor rax, rax
 call getfreq
 mov r15, [close_tics]
@@ -298,7 +220,10 @@ mov rdi, time
 mov rsi, r15
 movsd xmm0, xmm13
 call printf
-;; DEBUG SECONDS _END
+
+
+
+
 
 mov rdi, exit_msg
 mov rax, [output]

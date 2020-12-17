@@ -95,306 +95,214 @@
     59 00000194 207468652064726976-
     59 0000019D 65722E0A00         
     60                                  
-    61                                  ;============Debug Statements==============
-    62 000001A2 436C6F636B20537065-     dbg_getfreq db "Clock Speed is %f GHz", 10, 0
-    62 000001AB 656420697320256620-
-    62 000001B4 47487A0A00         
-    63 000001B9 43757272656E742074-     dbg_tics db "Current tics = %ld tics", 10, 0
-    63 000001C2 696373203D20256C64-
-    63 000001CB 20746963730A00     
-    64 000001D2 456C61707365642073-     dbg_seconds db "Elapsed seconds = %lf seconds", 10, 0
-    64 000001DB 65636F6E6473203D20-
-    64 000001E4 256C66207365636F6E-
-    64 000001ED 64730A00           
-    65 000001F1 526563656976656420-     dbg_input db "Received input = %ld.", 10, 0
-    65 000001FA 696E707574203D2025-
-    65 00000203 6C642E0A00         
-    66 00000208 426C6F636B20636F6D-     dbg_block_conf db "Block completed", 10, 0 
-    66 00000211 706C657465640A00   
-    67 00000219 256C660A00              dbg_float db "%lf", 10, 0
-    68                                  ;============Debug Statements==============
-    69                                  
-    70                                  global hsum     	        ;Makes manager callable by functions outside of file.
-    71                                  
-    72                                  segment .bss
-    73                                  
-    74                                  
-    75                                  segment .text
-    76                                  hsum:
-    77                                  
-    78                                  ;==================================== Back-up GPRs ====================================
-    79 00000000 55                        push  rbp         ;Save a copy of the stack base pointer
-    80 00000001 4889E5                    mov   rbp, rsp    ;We do this in order to be 100% compatible with C and C++.
-    81 00000004 53                        push  rbx         ;Back up rbx
-    82 00000005 51                        push  rcx         ;Back up rcx
-    83 00000006 52                        push  rdx         ;Back up rdx
-    84 00000007 56                        push  rsi         ;Back up rsi
-    85 00000008 57                        push  rdi         ;Back up rdi
-    86 00000009 4150                      push  r8          ;Back up r8
-    87 0000000B 4151                      push  r9          ;Back up r9
-    88 0000000D 4152                      push  r10         ;Back up r10
-    89 0000000F 4153                      push  r11         ;Back up r11
-    90 00000011 4154                      push  r12         ;Back up r12
-    91 00000013 4155                      push  r13         ;Back up r13
-    92 00000015 4156                      push  r14         ;Back up r14
-    93 00000017 4157                      push  r15         ;Back up r15
-    94 00000019 9C                        pushf             ;Back up rflags
-    95                                  
-    96                                  ;======================================================================================
-    97                                  
-    98                                  ;===================================Debug Section================================================
-    99                                  ;; DEBUG getfreq
-   100 0000001A 4831C0                  xor rax, rax
-   101 0000001D E8(00000000)            call getfreq
-   102 00000022 B801000000              mov rax, 1
-   103 00000027 48BF-                   mov rdi, dbg_getfreq
-   103 00000029 [A201000000000000] 
-   104                                  ;call printf
-   105                                  ;; DEBUG getfreq _END
-   106                                  
-   107                                  
-   108                                  
-   109                                  
-   110                                  ;; DEBUG SECONDS
-   111                                  ; getfreq -> xmm15
-   112 00000031 4831C0                  xor rax, rax
-   113 00000034 E8(00000000)            call getfreq
-   114 00000039 4C8B3C25[08000000]      mov r15, [close_tics]
-   115 00000041 4C2B3C25[00000000]      sub r15, [start_tics]
-   116 00000049 F24D0F2AEF              cvtsi2sd xmm13, r15
-   117 0000004E B800000000              mov rax, 0
-   118 00000053 F2440F10F8              movsd xmm15, xmm0
-   119                                  ; Math part
-   120 00000058 49BD0000000065CDCD-     mov r13, 0x41cdcd6500000000	; 1 billion
-   120 00000061 41                 
-   121 00000062 664D0F6EE5              movq xmm12, r13				; xmm12 = 1bil
-   122 00000067 F2450F10F7              movsd xmm14, xmm15			; xmm14 = Clock Speed
-   123 0000006C F2450F59F4              mulsd xmm14, xmm12			; xmm14 = Clock Speed * 1bil
-   124 00000071 F2450F5EEE              divsd xmm13, xmm14			; xmm13 = Elapsed time / (GHz * 1bil)
-   125                                  ; printf part
-   126 00000076 B801000000              mov rax, 1
-   127 0000007B 48BF-                   mov rdi, dbg_seconds
-   127 0000007D [D201000000000000] 
-   128 00000085 4C89FE                  mov rsi, r15
-   129 00000088 F2410F10C5              movsd xmm0, xmm13
-   130                                  ;call printf
-   131                                  ;; DEBUG SECONDS _END
-   132                                  ;===================================Debug Section================================================
-   133                                  
+    61                                  
+    62                                  
+    63                                  global hsum     	        ;Makes manager callable by functions outside of file.
+    64                                  
+    65                                  segment .bss
+    66                                  
+    67                                  
+    68                                  segment .text
+    69                                  hsum:
+    70                                  
+    71                                  ;==================================== Back-up GPRs ====================================
+    72 00000000 55                        push  rbp         ;Save a copy of the stack base pointer
+    73 00000001 4889E5                    mov   rbp, rsp    ;We do this in order to be 100% compatible with C and C++.
+    74 00000004 53                        push  rbx         ;Back up rbx
+    75 00000005 51                        push  rcx         ;Back up rcx
+    76 00000006 52                        push  rdx         ;Back up rdx
+    77 00000007 56                        push  rsi         ;Back up rsi
+    78 00000008 57                        push  rdi         ;Back up rdi
+    79 00000009 4150                      push  r8          ;Back up r8
+    80 0000000B 4151                      push  r9          ;Back up r9
+    81 0000000D 4152                      push  r10         ;Back up r10
+    82 0000000F 4153                      push  r11         ;Back up r11
+    83 00000011 4154                      push  r12         ;Back up r12
+    84 00000013 4155                      push  r13         ;Back up r13
+    85 00000015 4156                      push  r14         ;Back up r14
+    86 00000017 4157                      push  r15         ;Back up r15
+    87 00000019 9C                        pushf             ;Back up rflags
+    88                                  
+    89                                  ;======================================================================================
+    90                                  
+    91                                  
+    92                                  
+    93                                  ;;	Input Message
+    94 0000001A B800000000              mov rax, 0
+    95 0000001F 48BF-                   mov rdi, input_msg
+    95 00000021 [2F00000000000000] 
+    96 00000029 E8(00000000)            call printf
+    97                                  ;;	Input Message _END
+    98                                  
+    99                                  ;;	Receive input
+   100 0000002E 48BF-                   mov qword rdi, numberFormat
+   100 00000030 [2800000000000000] 
+   101 00000038 6AFF                    push qword -1                     	;Reserve space for input
+   102 0000003A 6AFF                    push qword -1
+   103 0000003C 4889E6                  mov qword rsi, rsp               	;Now rsi points to that dummy value on the stack
+   104 0000003F B800000000              mov qword rax, 0                 	;No vector registers
+   105 00000044 E8(00000000)            call scanf                       	;Call the external function; the new value is placed into the location that rsi points to
+   106 00000049 415F                    pop qword r15                          	;First inputted integer is saved in r15
+   107 0000004B 58                      pop rax
+   108 0000004C 4C893C25[10000000]      mov [input], r15								
+   109                                  ;; Receive input _END
+   110                                  
+   111                                  ;======================================Loop Initialization=====================================
+   112                                  
+   113 00000054 41BF00000000            mov r15, 0                                  ; Initialize the loop counter to 0
+   114 0000005A 4C8B3425[10000000]      mov r14, [input]					        ; Initialize counter validation to inputted value
+   115 00000062 F2440F103C25-           movsd xmm15, [fHarmonNumerator]		  		; xmm15 = hsum numerator, always 1
+   115 00000068 [20000000]         
+   116                                  
+   117                                  
+   118                                  ;	Initial Tics
+   119 0000006C 4831C0                  xor rax, rax
+   120 0000006F 0F31                    rdtsc
+   121 00000071 890425[00000000]        mov [start_tics], eax		; Lower half of RDTSC will be in eax
+   122 00000078 891425[04000000]        mov [start_tics+4], edx		; Upper half of RDTSC will be in edx
+   123 0000007F 48BF-                   mov rdi, initial_tics			; First parameter for printf
+   123 00000081 [B200000000000000] 
+   124 00000089 488B3425[00000000]      mov rsi, [start_tics]		; Second parameter for printf
+   125 00000091 E8(00000000)            call printf
+   126                                  
+   127                                  
+   128                                  ;;	Output Column Head
+   129 00000096 B800000000              mov qword rax, 0
+   130 0000009B 48BF-                   mov rdi, stringFormat
+   130 0000009D [2C00000000000000] 
+   131 000000A5 48BE-                   mov rsi, column_head
+   131 000000A7 [EE00000000000000] 
+   132 000000AF E8(00000000)            call printf
+   133                                  ;;	Output Column Head _END
    134                                  
-   135                                  ;;	Input Message
-   136 0000008D B800000000              mov rax, 0
-   137 00000092 48BF-                   mov rdi, input_msg
-   137 00000094 [2F00000000000000] 
-   138 0000009C E8(00000000)            call printf
-   139                                  ;;	Input Message _END
-   140                                  
-   141                                  ;;	Receive input
-   142 000000A1 48BF-                   mov qword rdi, numberFormat
-   142 000000A3 [2800000000000000] 
-   143 000000AB 6AFF                    push qword -1                     	;Reserve space for input
-   144 000000AD 6AFF                    push qword -1
-   145 000000AF 4889E6                  mov qword rsi, rsp               	;Now rsi points to that dummy value on the stack
-   146 000000B2 B800000000              mov qword rax, 0                 	;No vector registers
-   147 000000B7 E8(00000000)            call scanf                       	;Call the external function; the new value is placed into the location that rsi points to
-   148 000000BC 415F                    pop qword r15                          	;First inputted integer is saved in r15
-   149 000000BE 58                      pop rax
-   150 000000BF 4C893C25[10000000]      mov [input], r15								
-   151                                  ;; Receive input _END
-   152                                  
-   153                                  
-   154                                  ;===================================Debug Section================================================
-   155                                  ;; DEBUG INPUT
-   156 000000C7 48BF-                   mov rdi, dbg_input
-   156 000000C9 [F101000000000000] 
-   157 000000D1 488B3425[10000000]      mov rsi, [input]
-   158 000000D9 B800000000              mov rax, 0
-   159                                  ;call printf
-   160                                  ;; DEBUG INPUT _END					
-   161                                  ;===================================Debug Section================================================
-   162                                  
-   163 000000DE 41BF00000000            mov r15, 0                                  ; Initialize the loop counter to 0
-   164 000000E4 4C8B3425[10000000]      mov r14, [input]					        ; Initialize counter validation to inputted value
-   165 000000EC F2440F103C25-           movsd xmm15, [fHarmonNumerator]		  		; xmm15 = hsum numerator, always 1
-   165 000000F2 [20000000]         
-   166                                  
-   167                                  
+   135                                  ;===================================Loop Start===================================================
+   136                                  hsum_loop:
+   137                                  
+   138                                  ;;	Loop Validation
+   139 000000B4 4831C0                  xor rax, rax                       ;No data from the SSE will be printed
+   140 000000B7 4983FE00                cmp r14, 0							; Compares r15 to r14
+   141 000000BB 7E72                    jle non_positive_input					; If r15 >= r14, input received is <= 1
+   142                                  ;;	Loop Validation _END
+   143                                  
+   144                                  
+   145                                  ;;	Loop Body
+   146 000000BD 49FFC7                  inc r15									; increment r15. Loop Counter and denominator
+   147 000000C0 F24D0F2AF7              cvtsi2sd xmm14, r15						; Converts r15(Denominator) to xmm14 register
+   148 000000C5 F2440F103C25-           movsd xmm15, [fHarmonNumerator]
+   148 000000CB [20000000]         
+   149 000000CF F2450F5EFE              divsd xmm15, xmm14						; Division of Numerator(xmm15) by Denominator(xmm14)
+   150                                  
+   151                                  ; Add harmonic increment to sum
+   152 000000D4 F2440F102C25-           movsd xmm13, [output]
+   152 000000DA [18000000]         
+   153 000000DE F2450F58EF              addsd xmm13, xmm15						; Adds the latest division to output total
+   154 000000E3 F2440F112C25-           movsd [output], xmm13
+   154 000000E9 [18000000]         
+   155                                  
+   156                                  ; Validation for output of terms
+   157 000000ED 4C89F8                  mov rax, r15
+   158 000000F0 41B908000000            mov r9, 8
+   159 000000F6 4899                    cqo
+   160 000000F8 49F7F9                  idiv r9									; rdx = rax(loop counter) % 8
+   161 000000FB 4883FA00                cmp rdx, 0								
+   162 000000FF 7407                    je term_output							; if counter is a multiple of 8, output the term
+   163                                  ; Validation to continue Loop
+   164 00000101 4D39F7                  cmp r15, r14							; if loop counter == input value...
+   165 00000104 743D                    je loop_end								; ... jump to closing statements
+   166 00000106 EBAC                    jmp hsum_loop							; else start hsum_loop all over again
+   167                                  ;;	Loop Body _END
    168                                  
-   169                                  ;================================================================================================
-   170                                  ;================================================================================================
-   171                                  ;====================CODE STABLE UP TO THIS POINT. SEG FAULT DOWN BELOW==========================
-   172                                  ;========================EDIT(12-16-2020). SEG FAULT RESOLVED====================================
-   173                                  
-   174 000000F6 48BF-                   mov rdi, dbg_input			; 
-   174 000000F8 [F101000000000000] 
-   175 00000100 4C89F6                  mov rsi, r14
-   176                                  ;call printf
-   177                                  
-   178                                  ;===================================Debug Section================================================
-   179                                  ; DEBUG HSUM NUMERATOR
-   180 00000103 F20F100425-             movsd xmm0, [fHarmonNumerator]
-   180 00000108 [20000000]         
-   181 0000010C B801000000              mov rax, 1
-   182 00000111 48BF-                   mov rdi, dbg_float
-   182 00000113 [1902000000000000] 
-   183                                  ;call printf
-   184                                  ; DEBUG HSUM NUMERATOR _END
-   185                                  
-   186                                  ;; DEBUG tics (START)
-   187 0000011B 4831C0                  xor rax, rax
-   188 0000011E 0F31                    rdtsc
-   189 00000120 890425[00000000]        mov [start_tics], eax		; Lower half of RDTSC will be in eax
-   190 00000127 891425[04000000]        mov [start_tics+4], edx		; Upper half of RDTSC will be in edx
-   191 0000012E 48BF-                   mov rdi, initial_tics			; First parameter for printf
-   191 00000130 [B200000000000000] 
-   192 00000138 488B3425[00000000]      mov rsi, [start_tics]		; Second parameter for printf
-   193 00000140 E8(00000000)            call printf
-   194                                  ;; DEBUG tics (START) _END
-   195                                  
-   196                                  ;;	Output Column Head
-   197 00000145 B800000000              mov qword rax, 0
-   198 0000014A 48BF-                   mov rdi, stringFormat
-   198 0000014C [2C00000000000000] 
-   199 00000154 48BE-                   mov rsi, column_head
-   199 00000156 [EE00000000000000] 
-   200 0000015E E8(00000000)            call printf
-   201                                  ;;	Output Column Head _END
-   202                                  
-   203                                  ;===================================Loop Start===================================================
-   204                                  hsum_loop:
-   205                                  
-   206                                  ;;	Loop Validation
-   207 00000163 4831C0                  xor rax, rax                       ;No data from the SSE will be printed
-   208 00000166 4983FE00                cmp r14, 0							; Compares r15 to r14
-   209 0000016A 7E72                    jle non_positive_input					; If r15 >= r14, input received is <= 1
-   210                                  ;;	Loop Validation _END
-   211                                  
-   212                                  
-   213                                  
-   214                                  ;;	Loop Body
-   215 0000016C 49FFC7                  inc r15									; increment r15. Loop Counter and denominator
-   216 0000016F F24D0F2AF7              cvtsi2sd xmm14, r15						; Converts r15(Denominator) to xmm14 register
-   217 00000174 F2440F103C25-           movsd xmm15, [fHarmonNumerator]
-   217 0000017A [20000000]         
-   218 0000017E F2450F5EFE              divsd xmm15, xmm14						; Division of Numerator(xmm15) by Denominator(xmm14)
-   219                                  
-   220                                  
-   221                                  
-   222                                  ; Add harmonic increment to sum
-   223 00000183 F2440F102C25-           movsd xmm13, [output]
-   223 00000189 [18000000]         
-   224 0000018D F2450F58EF              addsd xmm13, xmm15						; Adds the latest division to output total
-   225 00000192 F2440F112C25-           movsd [output], xmm13
-   225 00000198 [18000000]         
+   169                                  
+   170                                  
+   171                                  ;;	Term Output
+   172                                  term_output:							;loop if term needs to be outputted
+   173 00000108 B801000000              mov rax, 1
+   174 0000010D 48BF-                   mov rdi, row_hsum
+   174 0000010F [0D01000000000000] 
+   175 00000117 4C89FE                  mov rsi, r15
+   176 0000011A F20F100425-             movsd xmm0, [output]
+   176 0000011F [18000000]         
+   177 00000123 E8(00000000)            call printf
+   178                                  ; Validation to continue Loop
+   179 00000128 4D39F7                  cmp r15, r14							; if loop counter == input value...
+   180 0000012B 7416                    je loop_end								; ... jump to closing statements
+   181 0000012D EB85                    jmp hsum_loop							; else start hsum_loop all over again
+   182                                  ;;	Term Output _END 
+   183                                  
+   184                                  ;===================================Loop End===================================================
+   185                                  ;	Jump for invalid input
+   186                                  non_positive_input:
+   187 0000012F 48BF-                   mov rdi, error_msg
+   187 00000131 [6D00000000000000] 
+   188 00000139 B800000000              mov rax, 0
+   189 0000013E E8(00000000)            call printf
+   190                                  
+   191                                  loop_end:
+   192                                  
+   193 00000143 4831C0                  xor rax, rax
+   194 00000146 0F31                    rdtsc
+   195 00000148 890425[08000000]        mov [close_tics], eax		; Lower half of RDTSC will be in eax
+   196 0000014F 891425[0C000000]        mov [close_tics+4], edx		; Upper half of RDTSC will be in edx
+   197                                  
+   198                                  
+   199 00000156 48BF-                   mov rdi, final_tics
+   199 00000158 [1A01000000000000] 
+   200 00000160 B800000000              mov rax, 0
+   201 00000165 488B3425[08000000]      mov rsi, [close_tics]
+   202 0000016D E8(00000000)            call printf
+   203                                  
+   204                                  
+   205 00000172 4831C0                  xor rax, rax
+   206 00000175 E8(00000000)            call getfreq
+   207 0000017A 4C8B3C25[08000000]      mov r15, [close_tics]
+   208 00000182 4C2B3C25[00000000]      sub r15, [start_tics]
+   209 0000018A F24D0F2AEF              cvtsi2sd xmm13, r15
+   210 0000018F B800000000              mov rax, 0
+   211 00000194 F2440F10F8              movsd xmm15, xmm0
+   212                                  ; Math part
+   213 00000199 49BD0000000065CDCD-     mov r13, 0x41cdcd6500000000	; 1 billion
+   213 000001A2 41                 
+   214 000001A3 664D0F6EE5              movq xmm12, r13				; xmm12 = 1bil
+   215 000001A8 F2450F10F7              movsd xmm14, xmm15			; xmm14 = Clock Speed
+   216 000001AD F2450F59F4              mulsd xmm14, xmm12			; xmm14 = Clock Speed * 1bil
+   217 000001B2 F2450F5EEE              divsd xmm13, xmm14			; xmm13 = Elapsed time / (GHz * 1bil)
+   218                                  ; printf part
+   219 000001B7 B801000000              mov rax, 1
+   220 000001BC 48BF-                   mov rdi, time
+   220 000001BE [3701000000000000] 
+   221 000001C6 4C89FE                  mov rsi, r15
+   222 000001C9 F2410F10C5              movsd xmm0, xmm13
+   223 000001CE E8(00000000)            call printf
+   224                                  
+   225                                  
    226                                  
    227                                  
-   228                                  ; Validation for output of terms
-   229 0000019C 4C89F8                  mov rax, r15
-   230 0000019F 41B908000000            mov r9, 8
-   231 000001A5 4899                    cqo
-   232 000001A7 49F7F9                  idiv r9									; rdx = rax(loop counter) % 8
-   233 000001AA 4883FA00                cmp rdx, 0								
-   234 000001AE 7407                    je term_output							; if counter is a multiple of 8, output the term
-   235                                  ; Validation to continue Loop
-   236 000001B0 4D39F7                  cmp r15, r14							; if loop counter == input value...
-   237 000001B3 743D                    je loop_end								; ... jump to closing statements
-   238 000001B5 EBAC                    jmp hsum_loop							; else start hsum_loop all over again
-   239                                  ;;	Loop Body _END
-   240                                  
-   241                                  ;;	Term Output
-   242                                  term_output:							;loop if term needs to be outputted
-   243 000001B7 B801000000              mov rax, 1
-   244 000001BC 48BF-                   mov rdi, row_hsum
-   244 000001BE [0D01000000000000] 
-   245 000001C6 4C89FE                  mov rsi, r15
-   246 000001C9 F20F100425-             movsd xmm0, [output]
-   246 000001CE [18000000]         
-   247 000001D2 E8(00000000)            call printf
-   248                                  ; Validation to continue Loop
-   249 000001D7 4D39F7                  cmp r15, r14							; if loop counter == input value...
-   250 000001DA 7416                    je loop_end								; ... jump to closing statements
-   251 000001DC EB85                    jmp hsum_loop							; else start hsum_loop all over again
-   252                                  ;;	Term Output _END
-   253                                  ;===================================Loop End===================================================
-   254                                  
-   255                                  non_positive_input:
-   256 000001DE 48BF-                   mov rdi, error_msg
-   256 000001E0 [6D00000000000000] 
-   257 000001E8 B800000000              mov rax, 0
-   258 000001ED E8(00000000)            call printf
-   259                                  
-   260                                  
-   261                                  loop_end:
-   262                                  
-   263                                  ;; DEBUG tics (CLOSE)
-   264 000001F2 4831C0                  xor rax, rax
-   265 000001F5 0F31                    rdtsc
-   266 000001F7 890425[08000000]        mov [close_tics], eax		; Lower half of RDTSC will be in eax
-   267 000001FE 891425[0C000000]        mov [close_tics+4], edx		; Upper half of RDTSC will be in edx
-   268 00000205 48BF-                   mov rdi, dbg_tics			; First parameter for printf
-   268 00000207 [B901000000000000] 
-   269 0000020F 488B3425[08000000]      mov rsi, [close_tics]		; Second parameter for printf
-   270                                  ;call printf
-   271                                  ; DEBUG tics (CLOSE) _END
-   272                                  
-   273 00000217 48BF-                   mov rdi, final_tics
-   273 00000219 [1A01000000000000] 
-   274 00000221 B800000000              mov rax, 0
-   275 00000226 488B3425[08000000]      mov rsi, [close_tics]
-   276                                  ;movsd xmm0, [output]
-   277 0000022E E8(00000000)            call printf
-   278                                  
-   279                                  
-   280                                  ; DEBUG SECONDS
-   281                                  ; getfreq -> xmm15
-   282 00000233 4831C0                  xor rax, rax
-   283 00000236 E8(00000000)            call getfreq
-   284 0000023B 4C8B3C25[08000000]      mov r15, [close_tics]
-   285 00000243 4C2B3C25[00000000]      sub r15, [start_tics]
-   286 0000024B F24D0F2AEF              cvtsi2sd xmm13, r15
-   287 00000250 B800000000              mov rax, 0
-   288 00000255 F2440F10F8              movsd xmm15, xmm0
-   289                                  ; Math part
-   290 0000025A 49BD0000000065CDCD-     mov r13, 0x41cdcd6500000000	; 1 billion
-   290 00000263 41                 
-   291 00000264 664D0F6EE5              movq xmm12, r13				; xmm12 = 1bil
-   292 00000269 F2450F10F7              movsd xmm14, xmm15			; xmm14 = Clock Speed
-   293 0000026E F2450F59F4              mulsd xmm14, xmm12			; xmm14 = Clock Speed * 1bil
-   294 00000273 F2450F5EEE              divsd xmm13, xmm14			; xmm13 = Elapsed time / (GHz * 1bil)
-   295                                  ; printf part
-   296 00000278 B801000000              mov rax, 1
-   297 0000027D 48BF-                   mov rdi, time
-   297 0000027F [3701000000000000] 
-   298 00000287 4C89FE                  mov rsi, r15
-   299 0000028A F2410F10C5              movsd xmm0, xmm13
-   300 0000028F E8(00000000)            call printf
-   301                                  ;; DEBUG SECONDS _END
-   302                                  
-   303 00000294 48BF-                   mov rdi, exit_msg
-   303 00000296 [7001000000000000] 
-   304 0000029E 488B0425[18000000]      mov rax, [output]
-   305 000002A6 E8(00000000)            call printf
-   306                                  
-   307                                  
-   308 000002AB F20F100425-             movsd xmm0, [output]
-   308 000002B0 [18000000]         
-   309                                  
-   310                                  ;==================================== Restore GPRs ====================================
-   311 000002B4 9D                        popf              ;Restore rflags
-   312 000002B5 415F                      pop   r15         ;Restore r15
-   313 000002B7 415E                      pop   r14         ;Restore r14
-   314 000002B9 415D                      pop   r13         ;Restore r13
-   315 000002BB 415C                      pop   r12         ;Restore r12
-   316 000002BD 415B                      pop   r11         ;Restore r11
-   317 000002BF 415A                      pop   r10         ;Restore r10
-   318 000002C1 4159                      pop   r9          ;Restore r9
-   319 000002C3 4158                      pop   r8          ;Restore r8
-   320 000002C5 5F                        pop   rdi         ;Restore rdi
-   321 000002C6 5E                        pop   rsi         ;Restore rsi
-   322 000002C7 5A                        pop   rdx         ;Restore rdx
-   323 000002C8 59                        pop   rcx         ;Restore rcx
-   324 000002C9 5B                        pop   rbx         ;Restore rbx
-   325 000002CA 5D                        pop   rbp         ;Return rbp to point to the base of the activation record of the caller.
-   326                                  ;======================================================================================
-   327                                  
-   328 000002CB C3                        ret
+   228                                  
+   229 000001D3 48BF-                   mov rdi, exit_msg
+   229 000001D5 [7001000000000000] 
+   230 000001DD 488B0425[18000000]      mov rax, [output]
+   231 000001E5 E8(00000000)            call printf
+   232                                  
+   233                                  
+   234 000001EA F20F100425-             movsd xmm0, [output]
+   234 000001EF [18000000]         
+   235                                  
+   236                                  ;==================================== Restore GPRs ====================================
+   237 000001F3 9D                        popf              ;Restore rflags
+   238 000001F4 415F                      pop   r15         ;Restore r15
+   239 000001F6 415E                      pop   r14         ;Restore r14
+   240 000001F8 415D                      pop   r13         ;Restore r13
+   241 000001FA 415C                      pop   r12         ;Restore r12
+   242 000001FC 415B                      pop   r11         ;Restore r11
+   243 000001FE 415A                      pop   r10         ;Restore r10
+   244 00000200 4159                      pop   r9          ;Restore r9
+   245 00000202 4158                      pop   r8          ;Restore r8
+   246 00000204 5F                        pop   rdi         ;Restore rdi
+   247 00000205 5E                        pop   rsi         ;Restore rsi
+   248 00000206 5A                        pop   rdx         ;Restore rdx
+   249 00000207 59                        pop   rcx         ;Restore rcx
+   250 00000208 5B                        pop   rbx         ;Restore rbx
+   251 00000209 5D                        pop   rbp         ;Return rbp to point to the base of the activation record of the caller.
+   252                                  ;======================================================================================
+   253                                  
+   254 0000020A C3                        ret
